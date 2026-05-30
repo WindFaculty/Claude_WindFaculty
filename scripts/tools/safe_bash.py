@@ -7,6 +7,8 @@ import sys
 import os
 import subprocess
 import re
+import json
+import time
 
 # Hardcoded fallback lists in case configs/tools.yaml is unavailable
 DEFAULT_ALLOW = [
@@ -106,6 +108,38 @@ def classify_command(cmd_str, allowed, ask, deny):
     # 4. Default fallback: Unrecognized commands are categorized as ASK/DENY for safety
     return "ASK", "Unrecognized command, blocking by default."
 
+def write_policy_decision(cmd, classification, reason):
+    """Log the policy decision as a JSON line to tool_policy_decisions.jsonl."""
+    os.makedirs("artifacts", exist_ok=True)
+    decision = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "command": cmd,
+        "classification": classification,
+        "reason": reason
+    }
+    try:
+        with open(os.path.join("artifacts", "tool_policy_decisions.jsonl"), "a", encoding="utf-8") as f:
+            f.write(json.dumps(decision) + "\n")
+    except Exception:
+        pass
+
+def write_execution_log(cmd, start_time, end_time, exit_code):
+    """Log the execution details as a JSON line to tool_execution_log.jsonl."""
+    os.makedirs("artifacts", exist_ok=True)
+    log_entry = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "command": cmd,
+        "start_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(start_time)),
+        "end_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(end_time)),
+        "elapsed_seconds": end_time - start_time,
+        "exit_code": exit_code
+    }
+    try:
+        with open(os.path.join("artifacts", "tool_execution_log.jsonl"), "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception:
+        pass
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python safe_bash.py \"<command>\"")
@@ -115,6 +149,9 @@ def main():
     allowed, ask, deny = load_policies()
     
     classification, reason = classify_command(command, allowed, ask, deny)
+    
+    # Write policy decision log
+    write_policy_decision(command, classification, reason)
     
     if classification == "DENY":
         print(f"[DENY] Safe Bash Blocked Command: '{command}'")
@@ -128,13 +165,19 @@ def main():
         
     elif classification == "ALLOW":
         print(f"[ALLOW] Executing Safe Command: '{command}'")
+        start_time = time.time()
+        exit_code = 1
         try:
             # Run command and return its exit code
             res = subprocess.run(command, shell=True)
-            sys.exit(res.returncode)
+            exit_code = res.returncode
+            sys.exit(exit_code)
         except Exception as e:
             print(f"[ERROR] Failed to execute command: {str(e)}")
             sys.exit(1)
+        finally:
+            end_time = time.time()
+            write_execution_log(command, start_time, end_time, exit_code)
 
 if __name__ == "__main__":
     main()
