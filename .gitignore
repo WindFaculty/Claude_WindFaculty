@@ -53,6 +53,7 @@ artifacts/*
 reports/*
 !reports/.gitkeep
 !reports/phase0_claude_environment_foundation.md
+!reports/semble_integration_20260531.md
 
 # Cloned third-party repositories
 third_party/*
