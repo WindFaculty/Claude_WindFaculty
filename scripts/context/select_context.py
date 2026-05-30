@@ -96,6 +96,16 @@ def main():
                     "relevance_score": 1
                 })
                 
+    # Write context candidates (unfiltered list of matches)
+    candidates = []
+    for filepath, count in matches:
+        candidates.append({
+            "file": filepath,
+            "relevance_score": count
+        })
+    with open(os.path.join("artifacts", "context_candidates.json"), "w", encoding="utf-8") as f:
+        json.dump(candidates, f, indent=2)
+
     # Write selected context json
     os.makedirs("artifacts", exist_ok=True)
     with open(os.path.join("artifacts", "selected_context.json"), "w", encoding="utf-8") as f:

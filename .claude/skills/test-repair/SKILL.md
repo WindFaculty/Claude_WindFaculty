@@ -11,11 +11,14 @@ Use this skill when test failures are encountered during the validation loop. It
    python -m pytest
    ```
 2. **Execute Diagnoser**:
-   Delegate stack trace reading to a subagent (`test-diagnoser.md`) or capture the raw dump manually. Keep log summaries in `artifacts/test_failure_summary.json`.
+   Run the diagnostics script to isolate failure trace strings and formulate target fix steps:
+   ```bash
+   python scripts/tools/test_repair_diagnostics.py
+   ```
 3. **Formulate a Repair Plan**:
-   Define the exact changes needed to resolve the regression in `artifacts/repair_plan.json`.
+   Verify edit strategies in `artifacts/repair_plan.json` and track historical attempts inside `artifacts/repair_history.json`.
 4. **Surgical Fix & Re-test**:
-   Apply the logic fixes and re-execute the target test immediately.
+   Apply logic fixes and re-execute the target test immediately:
    ```bash
    python -m pytest <path_to_failed_test>.py
    ```
@@ -23,3 +26,4 @@ Use this skill when test failures are encountered during the validation loop. It
 ## Expected Deliverables
 * `artifacts/test_failure_summary.json`
 * `artifacts/repair_plan.json`
+* `artifacts/repair_history.json`

@@ -122,6 +122,17 @@ def main():
     with open(os.path.join("artifacts", "diff_validation.json"), "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
         
+    with open(os.path.join("artifacts", "diff_review.json"), "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2)
+        
+    patch_acceptance = {
+        "accepted": report["passed"] or report["verdict"] == "NO_DIFF",
+        "verdict": report["verdict"],
+        "message": report["message"]
+    }
+    with open(os.path.join("artifacts", "patch_acceptance.json"), "w", encoding="utf-8") as f:
+        json.dump(patch_acceptance, f, indent=2)
+        
     print(f"[{report['verdict']}] Diff Validation Report")
     print(f"Message: {report['message']}")
     print(f"Files Modified ({len(report['changed_files'])}): {', '.join(report['changed_files'])}")

@@ -13,8 +13,11 @@ Use this skill when onboarding into a new repository or starting a fresh coding 
 2. **Scan the directory structure**:
    Review file paths, configuration files in `configs/`, and project memories in `CLAUDE.md`.
 3. **Write initial state**:
-   Document the current Git head commit hash, active branch, and build/test statuses in a structured file `artifacts/repo_intake.json`.
+   Document the current Git metadata, file footprint counts, and workspace statistics by executing:
+   ```bash
+   python scripts/bootstrap/repo_intake.py
+   ```
 
 ## Expected Deliverables
 * `artifacts/repo_intake.json`
-* A brief markdown summary in `reports/repo_intake.md`.
+* A structured markdown summary in `reports/repo_intake.md`.
