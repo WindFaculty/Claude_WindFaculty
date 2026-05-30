@@ -39,13 +39,34 @@ def get_git_diff():
     """Get raw active git diff (staged + unstaged)."""
     try:
         # Check both cached and uncached diffs
-        res = subprocess.run(["git", "diff", "HEAD"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        res = subprocess.run(
+            ["git", "diff", "HEAD"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            encoding="utf-8",
+            errors="replace",
+        )
         if res.returncode == 0:
-            return res.stdout
-        
+            return res.stdout or ""
+
         # Fallback if HEAD does not exist (new repo with no commits)
-        res_staged = subprocess.run(["git", "diff", "--cached"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        res_unstaged = subprocess.run(["git", "diff"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        res_staged = subprocess.run(
+            ["git", "diff", "--cached"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        res_unstaged = subprocess.run(
+            ["git", "diff"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            encoding="utf-8",
+            errors="replace",
+        )
         return (res_staged.stdout or "") + (res_unstaged.stdout or "")
     except Exception:
         return ""

@@ -1,0 +1,36 @@
+# Semble Integration Manifest
+# This file records integration metadata for MinishLab/semble.
+# Do NOT edit manually — update by re-running the integration bootstrap.
+
+name: semble
+upstream_url: "https://github.com/MinishLab/semble"
+upstream_commit: "ea3c9180bd7b8c3ae2133120b17c3599ac93dec3"
+upstream_branch: "main"
+upstream_commit_date: "2026-05-29T11:30:10Z"
+upstream_commit_message: "fix: mismatch in roundtrip (#168)"
+integration_mode: "package"
+# "package" = installed via pip, not vendored or subtree'd.
+# Install: pip install "semble[mcp]"
+# MCP CLI:  uvx --from "semble[mcp]" semble
+license: "MIT"
+license_url: "https://github.com/MinishLab/semble/blob/main/LICENSE"
+imported_at: "2026-05-31T00:00:00Z"
+notes: >
+  Semble is used as a Python package dependency (opt-in, not vendored).
+  The full source is NOT copied into third_party/semble/ because the pip
+  package is more stable and easier to update than a vendored snapshot.
+  The package may be absent in environments that did not run setup/bootstrap;
+  all callers must use is_semble_available() before invoking Semble logic.
+  The semble_adapter.py handles graceful fallback to keyword search when
+  the package is not installed.
+
+integration_files:
+  adapter: "scripts/context/semble_adapter.py"
+  legacy_wrapper: "scripts/tools/semble_search.py"
+  config: "configs/integrations.yaml"
+  context_config_section: "configs/context.yaml#engines"
+  docs: "docs/integrations/semble.md"
+  tests:
+    - "tests/test_semble_adapter.py"
+    - "tests/test_select_context_engines.py"
+    - "tests/test_semble_integration.py"

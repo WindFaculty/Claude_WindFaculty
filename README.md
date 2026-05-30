@@ -23,8 +23,9 @@ Claude Code / Claude CLI
 
 1. **Safety First**: Safe wrappers for bash commands prevent destructive operations (e.g., `rm -rf`, `git push --force`).
 2. **Context Compacting**: Integrations with AST-based selectors to filter and bundle context, avoiding token bloat.
-3. **Rigorous Validation**: Pre-commit style validations to verify diffs, run tests, and check for secrets before claiming task success.
-4. **Structured Output**: Automatic execution summaries, reports, and benchmark metrics for every completed run.
+3. **Semble-Backed Context Selection**: When [Semble](https://github.com/MinishLab/semble) is installed, `select_context.py --engine auto` performs offline semantic code search instead of simple keyword matching. Falls back transparently to keyword search when Semble is unavailable — always recorded in `artifacts/context_engine_metadata.json`.
+4. **Rigorous Validation**: Pre-commit style validations to verify diffs, run tests, and check for secrets before claiming task success.
+5. **Structured Output**: Automatic execution summaries, reports, and benchmark metrics for every completed run.
 
 ## Setup
 

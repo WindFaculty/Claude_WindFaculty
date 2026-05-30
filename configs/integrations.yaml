@@ -1,0 +1,14 @@
+# Integrations configuration for Claude_WindFaculty
+# Controls which third-party integrations are enabled and how they behave.
+
+integrations:
+  semble:
+    enabled: true
+    mode: "auto"          # auto | package | cli | disabled
+    path: "third_party/semble"
+    fail_closed_for_strict: true
+    # fail_closed_for_strict: when --engine semble is used and semble is
+    # unavailable, exit with code 1 rather than silently continuing.
+    install_hint: 'pip install "semble[mcp]"'
+    upstream_url: "https://github.com/MinishLab/semble"
+    upstream_commit: "ea3c9180bd7b8c3ae2133120b17c3599ac93dec3"

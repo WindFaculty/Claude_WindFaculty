@@ -31,6 +31,13 @@ graph TD
 
 1. **Intake & Verification**: Initialize the run, verify the local environment, and record active git states using `verify_environment.py`.
 2. **Context Selection**: Query relevant files, check against budgets, and compile a compact selected packet using `select_context.py`.
+   ```bash
+   python scripts/context/select_context.py --engine auto --query "<task keyword>"
+   ```
+   - `--engine auto` prefers Semble semantic search when available; falls back to keyword scan if not.
+   - Always check `artifacts/context_engine_metadata.json` after the run.
+   - If `fallback_used: true`, the report must state keyword search was used — never claim Semble ran.
+
 3. **Surgical Modifications**: Edit only files in the active context, preserving comments, formatting, and structures.
 4. **Validation Check**: Run `validate_diff.py` to ensure the changes are correctly formatted and confined to target file lists.
 5. **Unit Testing**: Run `safe_test.py` or standard `pytest` cases to verify that your changes resolve issues without inducing regressions.

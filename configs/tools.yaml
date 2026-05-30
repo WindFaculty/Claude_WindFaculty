@@ -1,14 +1,21 @@
 # Safe Shell execution policies for safe_bash.py
 
 allowed:
+  - python scripts/context/select_context.py
+  - python scripts/context/semble_adapter.py
+  - python scripts/bootstrap/verify_environment.py
+  - python scripts/validate/validate_diff.py
+  - python scripts/validate/validate_secrets.py
+  - python scripts/tools/safe_test.py
+  - python -m pytest
+  - python -m py_compile
+  - pytest
   - git status
   - git diff
   - git log
   - git branch
   - rg
   - grep
-  - python -m pytest
-  - pytest
   - ruff check
   - mypy
   - npm test

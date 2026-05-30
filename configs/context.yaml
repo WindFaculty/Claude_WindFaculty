@@ -24,3 +24,12 @@ semble:
   enable: true
   top_k: 10
   cache_dir: ".cache/semble"
+
+# Engine routing for select_context.py
+# default: engine used when --engine is not specified (or engine=auto).
+# preferred: the engine auto mode will try first.
+# fallback: the engine auto mode falls back to when preferred fails.
+engines:
+  default: "auto"
+  preferred: "semble"
+  fallback: "keyword"

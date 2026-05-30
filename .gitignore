@@ -58,3 +58,6 @@ reports/*
 third_party/*
 !third_party/manifest.yaml
 !third_party/README.md
+!third_party/semble/
+third_party/semble/*
+!third_party/semble/README.md
