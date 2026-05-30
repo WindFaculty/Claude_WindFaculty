@@ -45,6 +45,9 @@ try {
     Write-Host "Installing pytest..." -ForegroundColor Gray
     & $venvPython -m pip install pytest --quiet
 
+    Write-Host "Installing boto3 for AWS Bedrock integration..." -ForegroundColor Gray
+    & $venvPython -m pip install boto3 --quiet
+
     Write-Host "Installing optional Semble code search (opt-in)..." -ForegroundColor Gray
     & $venvPython -m pip install "semble[mcp]" --quiet
     

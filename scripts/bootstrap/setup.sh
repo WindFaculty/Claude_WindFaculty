@@ -49,6 +49,9 @@ $VENV_PYTHON -m pip install --upgrade pip --quiet || true
 echo -e "${GRAY}Installing pytest...${NC}"
 $VENV_PYTHON -m pip install pytest --quiet || true
 
+echo -e "${GRAY}Installing boto3 for AWS Bedrock integration...${NC}"
+$VENV_PYTHON -m pip install boto3 --quiet || true
+
 echo -e "${GRAY}Installing optional Semble code search (opt-in)...${NC}"
 $VENV_PYTHON -m pip install "semble[mcp]" --quiet || true
 
