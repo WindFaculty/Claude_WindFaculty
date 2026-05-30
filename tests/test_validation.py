@@ -163,3 +163,27 @@ def test_parse_test_metrics():
     assert metrics_pass["failed"] == 0
     assert metrics_pass["skipped"] == 0
     assert metrics_pass["total"] == 17
+
+    # 3. Quiet mode, single passing
+    stdout_quiet_pass = "49 passed in 8.37s"
+    metrics_quiet_pass = parse_test_metrics(stdout_quiet_pass)
+    assert metrics_quiet_pass["passed"] == 49
+    assert metrics_quiet_pass["failed"] == 0
+    assert metrics_quiet_pass["skipped"] == 0
+    assert metrics_quiet_pass["total"] == 49
+
+    # 4. Quiet mode, multiple types
+    stdout_quiet_multi = "49 passed, 3 failed, 1 skipped in 8.35s"
+    metrics_quiet_multi = parse_test_metrics(stdout_quiet_multi)
+    assert metrics_quiet_multi["passed"] == 49
+    assert metrics_quiet_multi["failed"] == 3
+    assert metrics_quiet_multi["skipped"] == 1
+    assert metrics_quiet_multi["total"] == 53
+
+    # 5. Quiet mode with warnings and different order
+    stdout_quiet_warn = "2 failed, 49 passed, 1 skipped, 4 warnings in 10.5s"
+    metrics_quiet_warn = parse_test_metrics(stdout_quiet_warn)
+    assert metrics_quiet_warn["passed"] == 49
+    assert metrics_quiet_warn["failed"] == 2
+    assert metrics_quiet_warn["skipped"] == 1
+    assert metrics_quiet_warn["total"] == 52

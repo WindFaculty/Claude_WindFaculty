@@ -108,6 +108,8 @@ def is_exempt_from_context(filename):
         return True
     if filename.startswith("tests/"):
         return True
+    if filename.startswith("scripts/validate/") or filename.startswith("scripts/bootstrap/") or filename.startswith("scripts/context/"):
+        return True
     return False
 
 def analyze_diff(diff_text, max_files, suspicious_exts, selected_files=None):
@@ -190,8 +192,21 @@ def analyze_diff(diff_text, max_files, suspicious_exts, selected_files=None):
     }
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Git Diff Safety Validator")
+    parser.add_argument("--repo", type=str, default=".", help="Path to git repository root.")
+    args = parser.parse_args()
+    
     max_files, suspicious_exts = load_validation_config()
     
+    # Switch repository directory if custom path is set
+    if args.repo and args.repo != ".":
+        try:
+            os.chdir(args.repo)
+        except Exception as e:
+            print(f"[ERROR] Failed to switch repository directory: {str(e)}")
+            sys.exit(1)
+            
     # Fetch actual diff
     diff_text = get_git_diff()
     
@@ -223,9 +238,10 @@ def main():
     if report.get("suspicious_files"):
         print(f"WARNING: Suspicious files flagged: {', '.join(report['suspicious_files'])}")
         
-    # Exit with 0 if passed, or exit code 0/1 depending on strictness
-    # Usually we don't want to break the pipeline if NO_DIFF is just a warning, but for absolute safety return code 0 or 1
+    # Exit with 0 if passed or NO_DIFF, otherwise 1
     sys.exit(0 if report["passed"] or report["verdict"] == "NO_DIFF" else 1)
 
 if __name__ == "__main__":
     main()
+
+

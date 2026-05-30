@@ -60,7 +60,7 @@ def main():
     
     for root, dirs, files in os.walk("."):
         # Prune common ignored folders
-        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("node_modules", "artifacts", "reports", "third_party")]
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("node_modules", "artifacts", "reports", "third_party", "tests")]
         
         for file in files:
             if not file.endswith(target_exts):

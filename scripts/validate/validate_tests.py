@@ -15,40 +15,108 @@ def parse_test_metrics(stdout):
     if not stdout:
         return stats
         
-    # Match pytest output summary like "=== 17 passed in 0.62s ==="
-    summary_match = re.search(r"===\s*([a-zA-Z0-9\s,]+)\s*in\s*[\d\.]+s\s*===", stdout)
-    if summary_match:
-        text = summary_match.group(1)
-        for part in text.split(","):
-            part = part.strip()
-            item_match = re.match(r"(\d+)\s+([a-zA-Z]+)", part)
-            if item_match:
-                count = int(item_match.group(1))
-                status = item_match.group(2).lower()
-                if "pass" in status:
-                    stats["passed"] = count
-                elif "fail" in status:
-                    stats["failed"] = count
-                elif "skip" in status:
-                    stats["skipped"] = count
-        stats["total"] = stats["passed"] + stats["failed"] + stats["skipped"]
-    else:
-        # Fallback basic scan for single dots and Fs in captured streams
-        passed_count = len(re.findall(r"\sPASSED\s", stdout))
-        failed_count = len(re.findall(r"\sFAILED\s", stdout))
-        skipped_count = len(re.findall(r"\sSKIPPED\s", stdout))
-        if passed_count or failed_count or skipped_count:
-            stats["passed"] = passed_count
-            stats["failed"] = failed_count
-            stats["skipped"] = skipped_count
-            stats["total"] = passed_count + failed_count + skipped_count
+    # Search backwards for the pytest summary line
+    lines = stdout.splitlines()
+    for line in reversed(lines):
+        line = line.strip()
+        # Summary line pattern: must have "in" followed by seconds, e.g. "in 0.62s"
+        # and should contain "passed", "failed", "skipped", "error", or "warn"
+        if ("passed" in line or "failed" in line or "skipped" in line or "error" in line) and " in " in line:
+            # Strip boundary characters like '=' and whitespace
+            cleaned = line.strip("= ")
+            # Now cleaned is "17 passed in 0.62s" or "17 passed, 2 failed in 0.62s"
+            # Extract the part before "in "
+            match = re.match(r"^([a-zA-Z0-9\s,]+)\s+in\s+[\d\.]+s", cleaned)
+            if match:
+                text = match.group(1)
+                for part in text.split(","):
+                    part = part.strip()
+                    item_match = re.match(r"(\d+)\s+([a-zA-Z]+)", part)
+                    if item_match:
+                        count = int(item_match.group(1))
+                        status = item_match.group(2).lower()
+                        if "pass" in status:
+                            stats["passed"] = count
+                        elif "fail" in status or "error" in status:
+                            stats["failed"] = count
+                        elif "skip" in status:
+                            stats["skipped"] = count
+                stats["total"] = stats["passed"] + stats["failed"] + stats["skipped"]
+                return stats
+
+    # Fallback basic scan for single dots and Fs in captured streams
+    passed_count = len(re.findall(r"\bPASSED\b", stdout))
+    failed_count = len(re.findall(r"\bFAILED\b", stdout))
+    skipped_count = len(re.findall(r"\bSKIPPED\b", stdout))
+    if passed_count or failed_count or skipped_count:
+        stats["passed"] = passed_count
+        stats["failed"] = failed_count
+        stats["skipped"] = skipped_count
+        stats["total"] = passed_count + failed_count + skipped_count
             
     return stats
 
 def main():
+    import argparse
+    import subprocess
+    import shlex
+    
+    parser = argparse.ArgumentParser(description="Pytest Runner & Validation Gate")
+    parser.add_argument("--command", type=str, default=None, help="Command to run tests (e.g. 'pytest -q').")
+    args = parser.parse_args()
+    
     results_path = os.path.join("artifacts", "test_validation.json")
+    
+    # 1. If command is supplied, execute it, capture output, and save to json
+    if args.command:
+        print(f"[TEST RUNNER] Executing test suite: '{args.command}' ...")
+        cmd_parts = shlex.split(args.command)
+        
+        # Check if we should use the current python interpreter to avoid venv mismatches
+        if cmd_parts and cmd_parts[0] == "python":
+            cmd_parts[0] = sys.executable
+            
+        import time
+        start_time = time.time()
+        
+        # Ensure virtual environment's scripts are in PATH so command executable is resolved correctly
+        venv_bin = os.path.dirname(sys.executable)
+        env = os.environ.copy()
+        if venv_bin:
+            env["PATH"] = venv_bin + os.pathsep + env.get("PATH", "")
+            
+        try:
+            res = subprocess.run(
+                cmd_parts,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                shell=True if os.name == 'nt' else False,
+                env=env
+            )
+            exit_code = res.returncode
+            stdout = res.stdout
+            stderr = res.stderr
+        except Exception as e:
+            exit_code = -1
+            stdout = ""
+            stderr = f"Execution failed: {str(e)}"
+            
+        os.makedirs("artifacts", exist_ok=True)
+        test_run_data = {
+            "exit_code": exit_code,
+            "stdout": stdout,
+            "stderr": stderr,
+            "command": args.command,
+            "elapsed_seconds": round(time.time() - start_time, 3),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        }
+        with open(results_path, "w", encoding="utf-8") as f:
+            json.dump(test_run_data, f, indent=2)
+            
+    # 2. Parse and evaluate metrics
     if not os.path.exists(results_path):
-        print("[WARNING] No test run results found. Please execute safe_test.py first.")
+        print("[WARNING] No test run results found. Please execute safe_test.py or pass --command first.")
         # Create a blank fallback passing report for skeleton
         os.makedirs("artifacts", exist_ok=True)
         fallback = {
@@ -59,12 +127,9 @@ def main():
         }
         with open(results_path, "w", encoding="utf-8") as f:
             json.dump(fallback, f, indent=2)
-        results_path_to_read = results_path
-    else:
-        results_path_to_read = results_path
-        
+            
     try:
-        with open(results_path_to_read, "r", encoding="utf-8") as f:
+        with open(results_path, "r", encoding="utf-8") as f:
             data = json.load(f)
             
         exit_code = data.get("exit_code", 1)
@@ -75,7 +140,7 @@ def main():
         data["metrics"] = metrics
         
         # Write back updated json with metrics
-        with open(results_path_to_read, "w", encoding="utf-8") as f:
+        with open(results_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
             
         if exit_code == 0:
@@ -90,3 +155,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
