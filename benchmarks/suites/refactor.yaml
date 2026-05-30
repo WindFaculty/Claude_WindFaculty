@@ -1,0 +1,17 @@
+# Refactor Benchmark Suite
+name: refactor
+description: Verification of refactoring, code quality, and command execution policies
+tasks:
+  - task_id: safe_command_filters
+    name: "Safe Command Filters Verification"
+    command: "python -m pytest tests/test_safe_bash.py"
+    expected_exit_code: 0
+    timeout: 15
+    expected_artifacts: []
+
+  - task_id: benchmark_scoring_math
+    name: "Benchmark Scoring Math Verification"
+    command: "python -m pytest tests/test_benchmark.py::test_scoring_calculations"
+    expected_exit_code: 0
+    timeout: 15
+    expected_artifacts: []

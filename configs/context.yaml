@@ -18,3 +18,9 @@ search:
 compression:
   enable_compactor: true
   compact_level: "medium"  # low, medium, high
+
+# Semble semantic search configurations
+semble:
+  enable: true
+  top_k: 10
+  cache_dir: ".cache/semble"

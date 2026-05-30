@@ -2,6 +2,12 @@
 # Do not clone these repositories until explicitly calling scripts/bootstrap/clone_third_party.py
 
 repos:
+  semble:
+    url: https://github.com/MinishLab/semble
+    purpose: High-performance CPU-only semantic and lexical local code search for AI agents
+    target_dir: third_party/semble
+    phase: 1
+
   claude-context:
     url: https://github.com/zilliztech/claude-context
     purpose: Semantic and AST-based code search to find relevant context files

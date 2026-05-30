@@ -1,9 +1,42 @@
 # Smoke Test Benchmark Suite
-
 name: smoke
-description: Rapid execution verification of safety tools and environment state
+description: Rapid execution verification of core system components and safety tools
 tasks:
-  - task_id: verify_env
-    file: tasks/examples/sample_task.md
+  - task_id: repo_intake
+    name: "Repository Onboarding Intake"
+    command: "python scripts/bootstrap/repo_intake.py"
     expected_exit_code: 0
-    timeout: 10
+    timeout: 15
+    expected_artifacts:
+      - "artifacts/repo_intake.json"
+      - "reports/repo_intake.md"
+
+  - task_id: context_selection
+    name: "Context Selection and Packing"
+    command: "python scripts/context/select_context.py --query verify"
+    expected_exit_code: 0
+    timeout: 15
+    expected_artifacts:
+      - "artifacts/selected_context.json"
+      - "artifacts/context_pack.md"
+
+  - task_id: safe_command_policy
+    name: "Safe Command Execution Policy"
+    command: "python -m pytest tests/test_safe_bash.py"
+    expected_exit_code: 0
+    timeout: 20
+    expected_artifacts: []
+
+  - task_id: diff_validation
+    name: "Git Diff Validation Engine"
+    command: "python -m pytest tests/test_validate_diff.py"
+    expected_exit_code: 0
+    timeout: 20
+    expected_artifacts: []
+
+  - task_id: report_generation
+    name: "Unified Report Compilation"
+    command: "python scripts/reports/write_report.py"
+    expected_exit_code: 0
+    timeout: 15
+    expected_artifacts: []

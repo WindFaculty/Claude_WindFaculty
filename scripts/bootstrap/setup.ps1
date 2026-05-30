@@ -44,6 +44,9 @@ try {
     
     Write-Host "Installing pytest..." -ForegroundColor Gray
     & $venvPython -m pip install pytest --quiet
+
+    Write-Host "Installing optional Semble code search (opt-in)..." -ForegroundColor Gray
+    & $venvPython -m pip install "semble[mcp]" --quiet
     
     Write-Host "Dependencies successfully updated." -ForegroundColor Green
 } catch {

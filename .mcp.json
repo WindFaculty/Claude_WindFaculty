@@ -1,5 +1,15 @@
 {
   "mcpServers": {
+    "semble": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "semble[mcp]",
+        "semble"
+      ],
+      "env": {},
+      "disabled": false
+    },
     "git-mcp": {
       "command": "npx",
       "args": [

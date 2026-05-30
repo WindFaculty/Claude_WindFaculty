@@ -1,0 +1,46 @@
+{
+  "suite": "repo_intake",
+  "description": "Verification of environment bootstrap and ingestion metadata integrity",
+  "timestamp": "2026-05-30 23:21:29",
+  "elapsed_seconds": 1.1561038494110107,
+  "total_tasks": 2,
+  "passed_tasks": 2,
+  "failed_tasks": 0,
+  "average_score": 99.2,
+  "tasks": [
+    {
+      "task_id": "env_verifications",
+      "name": "System Environment Verifications",
+      "success": true,
+      "scores": {
+        "accuracy": 100.0,
+        "speed": 95.1,
+        "token_efficiency": 100.0,
+        "final": 99.0
+      },
+      "weights": {
+        "accuracy_weight": 0.6,
+        "speed_weight": 0.2,
+        "token_efficiency_weight": 0.2
+      },
+      "elapsed_seconds": 0.73
+    },
+    {
+      "task_id": "onboarding_statistics",
+      "name": "Workspace Intake Statistics",
+      "success": true,
+      "scores": {
+        "accuracy": 100.0,
+        "speed": 97.2,
+        "token_efficiency": 100.0,
+        "final": 99.4
+      },
+      "weights": {
+        "accuracy_weight": 0.6,
+        "speed_weight": 0.2,
+        "token_efficiency_weight": 0.2
+      },
+      "elapsed_seconds": 0.42
+    }
+  ]
+}

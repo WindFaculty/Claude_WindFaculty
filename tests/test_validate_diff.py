@@ -37,7 +37,7 @@ diff --git a/file2.py b/file2.py
 diff --git a/file3.py b/file3.py
 """
     report = analyze_diff(sample_diff, max_files=2, suspicious_exts=[".pyc"])
-    assert report["verdict"] == "FAIL"
+    assert report["verdict"] == "TOO_BROAD_DIFF"
     assert report["passed"] is False
     assert "TOO_BROAD_DIFF" in report["issues"]
 
@@ -45,7 +45,7 @@ def test_validate_suspicious_extension():
     sample_diff = """diff --git a/compiled.pyc b/compiled.pyc
 """
     report = analyze_diff(sample_diff, max_files=5, suspicious_exts=[".pyc"])
-    assert report["verdict"] == "FAIL"
+    assert report["verdict"] == "SUSPICIOUS_FILES"
     assert report["passed"] is False
     assert "SUSPICIOUS_FILES" in report["issues"]
     assert "compiled.pyc" in report["suspicious_files"]

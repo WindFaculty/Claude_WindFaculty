@@ -1,0 +1,97 @@
+{
+  "suite": "smoke",
+  "description": "Rapid execution verification of core system components and safety tools",
+  "timestamp": "2026-05-30 23:16:56",
+  "elapsed_seconds": 2.17958402633667,
+  "total_tasks": 5,
+  "passed_tasks": 5,
+  "failed_tasks": 0,
+  "average_score": 99.5,
+  "tasks": [
+    {
+      "task_id": "repo_intake",
+      "name": "Repository Onboarding Intake",
+      "success": true,
+      "scores": {
+        "accuracy": 100.0,
+        "speed": 97.2,
+        "token_efficiency": 100.0,
+        "final": 99.4
+      },
+      "weights": {
+        "accuracy_weight": 0.6,
+        "speed_weight": 0.2,
+        "token_efficiency_weight": 0.2
+      },
+      "elapsed_seconds": 0.42
+    },
+    {
+      "task_id": "context_selection",
+      "name": "Context Selection and Packing",
+      "success": true,
+      "scores": {
+        "accuracy": 100.0,
+        "speed": 98.7,
+        "token_efficiency": 100.0,
+        "final": 99.7
+      },
+      "weights": {
+        "accuracy_weight": 0.6,
+        "speed_weight": 0.2,
+        "token_efficiency_weight": 0.2
+      },
+      "elapsed_seconds": 0.2
+    },
+    {
+      "task_id": "safe_command_policy",
+      "name": "Safe Command Execution Policy",
+      "success": true,
+      "scores": {
+        "accuracy": 100.0,
+        "speed": 96.4,
+        "token_efficiency": 100.0,
+        "final": 99.3
+      },
+      "weights": {
+        "accuracy_weight": 0.6,
+        "speed_weight": 0.2,
+        "token_efficiency_weight": 0.2
+      },
+      "elapsed_seconds": 0.71
+    },
+    {
+      "task_id": "diff_validation",
+      "name": "Git Diff Validation Engine",
+      "success": true,
+      "scores": {
+        "accuracy": 100.0,
+        "speed": 96.4,
+        "token_efficiency": 100.0,
+        "final": 99.3
+      },
+      "weights": {
+        "accuracy_weight": 0.6,
+        "speed_weight": 0.2,
+        "token_efficiency_weight": 0.2
+      },
+      "elapsed_seconds": 0.72
+    },
+    {
+      "task_id": "report_generation",
+      "name": "Unified Report Compilation",
+      "success": true,
+      "scores": {
+        "accuracy": 100.0,
+        "speed": 99.1,
+        "token_efficiency": 100.0,
+        "final": 99.8
+      },
+      "weights": {
+        "accuracy_weight": 0.6,
+        "speed_weight": 0.2,
+        "token_efficiency_weight": 0.2
+      },
+      "elapsed_seconds": 0.13
+    }
+  ]
+}

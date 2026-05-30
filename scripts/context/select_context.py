@@ -34,6 +34,33 @@ def load_context_config():
     except Exception:
         return 20, []
 
+def load_semble_config():
+    """Load Semble settings from configs/context.yaml."""
+    config_path = os.path.join("configs", "context.yaml")
+    if not os.path.exists(config_path):
+        return False, 10
+        
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            
+        enable = True
+        # Match "semble:" section
+        semble_section = re.search(r"semble:\s*\n((?:\s+.*\n?)+)", content)
+        if semble_section:
+            sec_text = semble_section.group(1)
+            enable_match = re.search(r"enable:\s*(true|false)", sec_text, re.IGNORECASE)
+            if enable_match:
+                enable = enable_match.group(1).lower() == "true"
+            top_k = 10
+            top_k_match = re.search(r"top_k:\s*(\d+)", sec_text)
+            if top_k_match:
+                top_k = int(top_k_match.group(1))
+            return enable, top_k
+        return False, 10
+    except Exception:
+        return False, 10
+
 def search_files(query, exclude_patterns):
     """Walk through repository files and search for the query string."""
     results = []
@@ -73,16 +100,55 @@ def main():
     args = parser.parse_args()
     
     max_files, exclude = load_context_config()
+    semble_enable, semble_top_k = load_semble_config()
     
-    print(f"[CONTEXT SELECTOR] Scanning files for pattern: '{args.query}'")
-    matches = search_files(args.query, exclude) if args.query else []
+    using_semble = False
+    matches = []
     
+    if args.query and semble_enable:
+        try:
+            # Insert the parent folder to path to make sure scripts folder is visible if run standalone
+            parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+            if parent_dir not in sys.path:
+                sys.path.insert(0, parent_dir)
+                
+            from scripts.tools.semble_search import check_semble_available, run_semble_search
+            available, _ = check_semble_available()
+            if available:
+                print(f"[CONTEXT SELECTOR] Performing semantic code search using Semble for: '{args.query}'")
+                search_res = run_semble_search(args.query, top_k=semble_top_k)
+                if not search_res.get("error"):
+                    raw_matches = search_res.get("results", [])
+                    file_scores = {}
+                    for r in raw_matches:
+                        file_path = r["file"]
+                        score = r["score"]
+                        file_scores[file_path] = max(file_scores.get(file_path, 0.0), score)
+                    
+                    matches = [(f, int(s * 100)) for f, s in file_scores.items()]
+                    matches.sort(key=lambda x: x[1], reverse=True)
+                    using_semble = True
+                    print(f"[CONTEXT SELECTOR] Semble retrieved {len(matches)} relevant files.")
+                else:
+                    print(f"[CONTEXT SELECTOR] Semble search error: {search_res['error']}. Falling back...")
+        except Exception as e:
+            print(f"[CONTEXT SELECTOR] Failed invoking Semble: {str(e)}. Falling back to standard keyword scanner.")
+            
+    if not using_semble and args.query:
+        print(f"[CONTEXT SELECTOR] Scanning files for pattern (standard keyword search): '{args.query}'")
+        matches = search_files(args.query, exclude)
+        
     selected = []
     # Cap at budget limit
     for filepath, count in matches[:max_files]:
+        if using_semble:
+            reason = f"Semble semantic search match for '{args.query}' with confidence score {count/100:.2f}."
+        else:
+            reason = f"Matches query '{args.query}' with {count} occurrence(s)."
+            
         selected.append({
             "file": filepath,
-            "reason": f"Matches query '{args.query}' with {count} occurrence(s).",
+            "reason": reason,
             "relevance_score": count
         })
         
@@ -96,18 +162,19 @@ def main():
                     "relevance_score": 1
                 })
                 
-    # Write context candidates (unfiltered list of matches)
+    # Write context candidates
     candidates = []
     for filepath, count in matches:
         candidates.append({
             "file": filepath,
             "relevance_score": count
         })
+        
+    os.makedirs("artifacts", exist_ok=True)
     with open(os.path.join("artifacts", "context_candidates.json"), "w", encoding="utf-8") as f:
         json.dump(candidates, f, indent=2)
 
     # Write selected context json
-    os.makedirs("artifacts", exist_ok=True)
     with open(os.path.join("artifacts", "selected_context.json"), "w", encoding="utf-8") as f:
         json.dump(selected, f, indent=2)
         

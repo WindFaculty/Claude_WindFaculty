@@ -148,6 +148,32 @@ def check_env_secrets():
             
     return True, "No committed .env secrets or git-tracked .env files detected."
 
+def check_semble_status():
+    """Verify if Semble is available for semantic search."""
+    importable = False
+    try:
+        import semble
+        importable = True
+    except ImportError:
+        pass
+        
+    cli_available = False
+    try:
+        res = subprocess.run(["semble", "--help"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        if res.returncode == 0:
+            cli_available = True
+    except Exception:
+        pass
+        
+    if importable and cli_available:
+        return True, "Semble is fully available (Python API & CLI)."
+    elif importable:
+        return True, "Semble Python API is available. CLI/mcp commands may rely on uvx."
+    elif cli_available:
+        return True, "Semble CLI is available, but Python library is not installed in current environment."
+    else:
+        return True, "Semble is opt-in and currently not installed in this environment. (Will fall back to standard keyword search)"
+
 def main():
     import time
     print("=========================================")
@@ -160,7 +186,8 @@ def main():
         ("Claude CLI Status", check_claude_cli),
         ("Workspace Directories", check_required_directories),
         ("Config Files Parse", check_configs),
-        ("Secret Exposure Scan", check_env_secrets)
+        ("Secret Exposure Scan", check_env_secrets),
+        ("Semble Search Status", check_semble_status)
     ]
     
     all_pass = True

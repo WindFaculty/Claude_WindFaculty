@@ -48,6 +48,10 @@ $VENV_PYTHON -m pip install --upgrade pip --quiet || true
 
 echo -e "${GRAY}Installing pytest...${NC}"
 $VENV_PYTHON -m pip install pytest --quiet || true
+
+echo -e "${GRAY}Installing optional Semble code search (opt-in)...${NC}"
+$VENV_PYTHON -m pip install "semble[mcp]" --quiet || true
+
 echo -e "${GREEN}Dependencies successfully updated.${NC}"
 
 # 4. Generate local .env

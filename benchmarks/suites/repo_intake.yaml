@@ -1,0 +1,19 @@
+# Repo Intake Benchmark Suite
+name: repo_intake
+description: Verification of environment bootstrap and ingestion metadata integrity
+tasks:
+  - task_id: env_verifications
+    name: "System Environment Verifications"
+    command: "python -m pytest tests/test_verify_environment.py"
+    expected_exit_code: 0
+    timeout: 15
+    expected_artifacts: []
+
+  - task_id: onboarding_statistics
+    name: "Workspace Intake Statistics"
+    command: "python scripts/bootstrap/repo_intake.py"
+    expected_exit_code: 0
+    timeout: 15
+    expected_artifacts:
+      - "artifacts/repo_intake.json"
+      - "reports/repo_intake.md"

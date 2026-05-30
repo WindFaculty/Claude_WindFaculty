@@ -1,0 +1,17 @@
+# Bugfix Benchmark Suite
+name: bugfix
+description: Verification of environment variables parsing, credentials scanner and diff checks
+tasks:
+  - task_id: secret_leak_scanner
+    name: "Secrets Scanner Logic"
+    command: "python -m pytest tests/test_validation.py::test_validate_report_audit"
+    expected_exit_code: 0
+    timeout: 15
+    expected_artifacts: []
+
+  - task_id: diff_validation_engine
+    name: "Diff Safety Gate Checks"
+    command: "python -m pytest tests/test_validate_diff.py"
+    expected_exit_code: 0
+    timeout: 20
+    expected_artifacts: []
