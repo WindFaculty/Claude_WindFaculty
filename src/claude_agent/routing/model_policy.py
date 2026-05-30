@@ -4,6 +4,8 @@ import json
 import time
 import logging
 
+from src.claude_agent.config_loader import load_models_config
+
 logger = logging.getLogger("claude_agent.routing.model_policy")
 
 # Mandatory trigger keywords for Claude Sonnet escalation
@@ -60,53 +62,60 @@ def evaluate_routing_policy(prompt_text, messages=None, agent_name=None, force_s
     """
     Evaluates the model policy configuration and returns a dictionary of routing decisions.
     """
-    # 1. Load env variables with default routing parameters
+    # 1. Load YAML Configuration
+    config = load_models_config()
+    aws_bedrock_cfg = config["providers"].get("aws_bedrock", {})
+    
+    default_alias = aws_bedrock_cfg.get("default_model", "haiku_4_5")
+    escalation_alias = aws_bedrock_cfg.get("escalation_model", "sonnet_4_6")
+
+    # 2. Load env variables with default routing parameters
     enable_escalation = os.getenv("CLAUDE_ROUTING_ENABLE_ESCALATION", "true").lower() == "true"
     max_input_tokens_haiku = int(os.getenv("CLAUDE_ROUTING_MAX_INPUT_TOKENS_HAIKU", "120000"))
     escalate_on_val_fail = os.getenv("CLAUDE_ROUTING_ESCALATE_ON_VALIDATION_FAIL", "true").lower() == "true"
     escalate_on_repair_loop = os.getenv("CLAUDE_ROUTING_ESCALATE_ON_REPAIR_LOOP", "true").lower() == "true"
     escalate_on_complexity_score = int(os.getenv("CLAUDE_ROUTING_ESCALATE_ON_COMPLEXITY_SCORE", "7"))
     
-    selected_model = "haiku_4_5"
+    selected_model = default_alias
     escalated = False
     reasons = []
     
-    # 2. Check for manual/CLI force flags
+    # 3. Check for manual/CLI force flags
     if force_sonnet:
-        selected_model = "sonnet_4_6"
+        selected_model = escalation_alias
         escalated = True
         reasons.append("forced_via_cli_flag")
-        return _make_decision_dict(selected_model, escalated, reasons, 10)
+        return _make_decision_dict(selected_model, escalated, reasons, 10, default_alias, escalation_alias)
         
     if force_haiku:
-        selected_model = "haiku_4_5"
+        selected_model = default_alias
         escalated = False
         reasons.append("forced_haiku_via_cli")
-        return _make_decision_dict(selected_model, escalated, reasons, 0)
+        return _make_decision_dict(selected_model, escalated, reasons, 0, default_alias, escalation_alias)
         
-    # 3. Evaluate non-escalation/bypass overrides first
+    # 4. Evaluate non-escalation/bypass overrides first
     prompt_lower = prompt_text.lower()
     has_bypass_keyword = any(kw in prompt_lower for kw in BYPASS_KEYWORDS)
     
     # If escalation is disabled globally
     if not enable_escalation or no_escalation:
-        selected_model = "haiku_4_5"
+        selected_model = default_alias
         escalated = False
         reasons.append("escalation_disabled_by_config")
-        return _make_decision_dict(selected_model, escalated, reasons, calculate_complexity_score(prompt_text, messages))
+        return _make_decision_dict(selected_model, escalated, reasons, calculate_complexity_score(prompt_text, messages), default_alias, escalation_alias)
 
-    # 4. Check Context Token Size Limit
+    # 5. Check Context Token Size Limit
     estimated_tokens_count = estimate_tokens(prompt_text)
     if messages:
         for msg in messages:
             estimated_tokens_count += estimate_tokens(msg.get("content", ""))
             
     if estimated_tokens_count > max_input_tokens_haiku:
-        selected_model = "sonnet_4_6"
+        selected_model = escalation_alias
         escalated = True
         reasons.append("haiku_token_limit_exceeded")
         
-    # 5. Check Previous Run Validation Failures
+    # 6. Check Previous Run Validation Failures
     if escalate_on_val_fail:
         # Check diff_validation or test_validation failure
         prev_failed = False
@@ -122,10 +131,10 @@ def evaluate_routing_policy(prompt_text, messages=None, agent_name=None, force_s
                 except Exception:
                     pass
         if prev_failed:
-            selected_model = "sonnet_4_6"
+            selected_model = escalation_alias
             escalated = True
             
-    # 6. Check for active repair loops (retry loops >= 2)
+    # 7. Check for active repair loops (retry loops >= 2)
     if escalate_on_repair_loop:
         # Look for repair plan or history indicating loop cycle >= 2
         path = os.path.join("artifacts", "repair_history.json")
@@ -136,38 +145,38 @@ def evaluate_routing_policy(prompt_text, messages=None, agent_name=None, force_s
                     # Simple list of attempts or field matching retry index
                     attempts = len(history) if isinstance(history, list) else history.get("attempts", 0)
                     if attempts >= 2:
-                        selected_model = "sonnet_4_6"
+                        selected_model = escalation_alias
                         escalated = True
                         reasons.append("active_repair_loop_detected")
             except Exception:
                 pass
 
-    # 7. Check Agent Identity complexity
+    # 8. Check Agent Identity complexity
     if agent_name and agent_name in ["security-reviewer", "diff-reviewer", "test-diagnoser"]:
         # Subagents dealing with deep evaluation escalate easily
-        selected_model = "sonnet_4_6"
+        selected_model = escalation_alias
         escalated = True
         reasons.append(f"specialist_agent_escalation_{agent_name}")
 
-    # 8. Compute Complexity Score
+    # 9. Compute Complexity Score
     complexity = calculate_complexity_score(prompt_text, messages)
     if complexity >= escalate_on_complexity_score:
-        selected_model = "sonnet_4_6"
+        selected_model = escalation_alias
         escalated = True
         reasons.append(f"complexity_score_exceeded_{complexity}")
         
-    # 9. Direct Keyword matches in prompt
+    # 10. Direct Keyword matches in prompt
     matched_kws = [kw for kw in ESCALATION_KEYWORDS if kw in prompt_lower]
     if matched_kws:
         # If complexity was close or keywords are prominent, select Sonnet
         if len(matched_kws) >= 2:
-            selected_model = "sonnet_4_6"
+            selected_model = escalation_alias
             escalated = True
             reasons.append(f"matched_escalation_keywords_{len(matched_kws)}")
 
-    # 10. Check if user bypass explicitly forbids escalation (bypass wins unless token size overflows)
+    # 11. Check if user bypass explicitly forbids escalation (bypass wins unless token size overflows)
     if has_bypass_keyword and estimated_tokens_count <= max_input_tokens_haiku:
-        selected_model = "haiku_4_5"
+        selected_model = default_alias
         escalated = False
         reasons = [r for r in reasons if "forced" in r]
         reasons.append("bypass_keywords_matched")
@@ -177,16 +186,16 @@ def evaluate_routing_policy(prompt_text, messages=None, agent_name=None, force_s
     if not reasons:
         reasons.append("default_haiku_policy")
 
-    return _make_decision_dict(selected_model, escalated, reasons, complexity)
+    return _make_decision_dict(selected_model, escalated, reasons, complexity, default_alias, escalation_alias)
 
-def _make_decision_dict(selected_model, escalated, reasons, complexity_score):
+def _make_decision_dict(selected_model, escalated, reasons, complexity_score, default_alias="haiku_4_5", escalation_alias="sonnet_4_6"):
     """Helper to assemble a uniform decision dict and write audit log."""
     decision = {
         "provider": "aws_bedrock",
         "selected_model": selected_model,
-        "selected_model_id_env": "AWS_BEDROCK_HAIKU_4_5_MODEL_ID" if selected_model == "haiku_4_5" else "AWS_BEDROCK_SONNET_4_6_MODEL_ID",
+        "selected_model_id_env": "AWS_BEDROCK_HAIKU_4_5_MODEL_ID" if selected_model == default_alias else "AWS_BEDROCK_SONNET_4_6_MODEL_ID",
         "escalated": escalated,
-        "escalation_target": "sonnet_4_6" if not escalated else "none",
+        "escalation_target": escalation_alias if not escalated else "none",
         "reasons": reasons,
         "complexity_score": complexity_score,
         "budget_guard": "allow",

@@ -1,0 +1,24 @@
+providers:
+  aws_bedrock:
+    enabled: true
+    region_env: AWS_REGION
+    profile_env: AWS_PROFILE
+    default_model: haiku_4_5
+    escalation_model: sonnet_4_6
+
+models:
+  haiku_4_5:
+    provider: aws_bedrock
+    model_id_env: AWS_BEDROCK_HAIKU_4_5_MODEL_ID
+    role: default
+    cost_tier: low
+    latency_tier: fast
+    max_retries: 2
+
+  sonnet_4_6:
+    provider: aws_bedrock
+    model_id_env: AWS_BEDROCK_SONNET_4_6_MODEL_ID
+    role: escalation
+    cost_tier: high
+    latency_tier: medium
+    max_retries: 1

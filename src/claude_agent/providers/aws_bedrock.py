@@ -4,6 +4,8 @@ import json
 import time
 import logging
 
+from src.claude_agent.config_loader import load_models_config
+
 # Set up clean logging
 logger = logging.getLogger("claude_agent.providers.aws_bedrock")
 if not logger.handlers:
@@ -17,11 +19,19 @@ class AwsBedrockClaudeProvider:
     def __init__(self, region_name=None, profile_name=None, access_key=None, secret_key=None, session_token=None):
         """
         Initialize the AWS Bedrock client.
-        Extracts credentials from params or standard env variable mappings.
+        Extracts credentials and parameters based on configs/models.yaml mappings.
         """
-        # 1. Resolve configuration parameters
-        self.region = region_name or os.getenv("AWS_REGION") or "us-east-1"
-        self.profile = profile_name or os.getenv("AWS_PROFILE")
+        # 1. Load YAML configuration details
+        self.config = load_models_config()
+        
+        # Extract environment mapping names from config
+        aws_bedrock_cfg = self.config["providers"].get("aws_bedrock", {})
+        region_env_var = aws_bedrock_cfg.get("region_env", "AWS_REGION")
+        profile_env_var = aws_bedrock_cfg.get("profile_env", "AWS_PROFILE")
+        
+        # 2. Resolve AWS Connection parameters
+        self.region = region_name or os.getenv(region_env_var) or "us-east-1"
+        self.profile = profile_name or os.getenv(profile_env_var)
         self.access_key = access_key or os.getenv("AWS_ACCESS_KEY_ID")
         self.secret_key = secret_key or os.getenv("AWS_SECRET_ACCESS_KEY")
         self.session_token = session_token or os.getenv("AWS_SESSION_TOKEN")
@@ -139,18 +149,25 @@ class AwsBedrockClaudeProvider:
             return None, f"AWS Bedrock invoke error: {error_msg}"
 
     def _resolve_model_id(self, model_alias):
-        """Resolves standard alias into an AWS Bedrock model ID via env settings or fallbacks."""
-        if model_alias == "haiku_4_5":
-            env_val = os.getenv("AWS_BEDROCK_HAIKU_4_5_MODEL_ID")
-            return env_val or "anthropic.claude-3-5-haiku-20241022-v1:0"
-        elif model_alias == "sonnet_4_6":
-            env_val = os.getenv("AWS_BEDROCK_SONNET_4_6_MODEL_ID")
-            return env_val or "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
-        else:
-            # Directly use model_alias if it's already a full model id format
-            if "." in model_alias or ":" in model_alias:
-                return model_alias
-            return None
+        """Resolves standard alias into an AWS Bedrock model ID via YAML config and env settings."""
+        model_cfg = self.config.get("models", {}).get(model_alias, {})
+        if model_cfg:
+            env_var = model_cfg.get("model_id_env")
+            if env_var:
+                env_val = os.getenv(env_var)
+                if env_val:
+                    return env_val
+            
+            # Fallbacks matching standard commercial Bedrock Claude IDs
+            if model_alias == "haiku_4_5":
+                return "anthropic.claude-3-5-haiku-20241022-v1:0"
+            elif model_alias == "sonnet_4_6":
+                return "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+                
+        # Directly use model_alias if it's already a full model id format
+        if "." in model_alias or ":" in model_alias:
+            return model_alias
+        return None
 
     def _mask_model_id(self, model_id):
         """Safely masks model ID to protect any potential account-specific ARN suffixes in logs."""
