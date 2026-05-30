@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "preToolUse:bash": "python scripts/tools/safe_bash.py",
+    "postToolUse:bash": "",
+    "preToolUse:edit": "",
+    "preToolUse:write": "",
+    "stop": ""
+  },
+  "settings": {
+    "safetyClassifierEnabled": true,
+    "defaultMaxFiles": 20,
+    "budgetLimitEnabled": true
+  }
+}

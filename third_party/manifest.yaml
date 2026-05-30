@@ -1,0 +1,39 @@
+# Third-Party dependencies and tools candidates
+# Do not clone these repositories until explicitly calling scripts/bootstrap/clone_third_party.py
+
+repos:
+  claude-context:
+    url: https://github.com/zilliztech/claude-context
+    purpose: Semantic and AST-based code search to find relevant context files
+    target_dir: third_party/claude-context
+    phase: 1
+
+  ops-codegraph-tool:
+    url: https://github.com/optave/ops-codegraph-tool
+    purpose: Build dependency graphs and impact analysis maps for workspace symbols
+    target_dir: third_party/ops-codegraph-tool
+    phase: 1
+
+  sem:
+    url: https://github.com/Ataraxy-Labs/sem
+    purpose: AST-aware semantic diffing to verify precise impact of code adjustments
+    target_dir: third_party/sem
+    phase: 2
+
+  claw-compactor:
+    url: https://github.com/Ataraxy-Labs/claw-compactor
+    purpose: Compress selected code files to save token limits when parsing massive context
+    target_dir: third_party/claw-compactor
+    phase: 2
+
+  SecureShell:
+    url: https://github.com/divagr18/SecureShell
+    purpose: Security reference for safe command sandboxing and shell filtering
+    target_dir: third_party/SecureShell
+    phase: 1
+
+  pre-commit:
+    url: https://github.com/pre-commit/pre-commit
+    purpose: Multi-language pre-commit frameworks to run validation checks
+    target_dir: third_party/pre-commit
+    phase: 1

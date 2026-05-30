@@ -1,0 +1,9 @@
+# Smoke Test Benchmark Suite
+
+name: smoke
+description: Rapid execution verification of safety tools and environment state
+tasks:
+  - task_id: verify_env
+    file: tasks/examples/sample_task.md
+    expected_exit_code: 0
+    timeout: 10

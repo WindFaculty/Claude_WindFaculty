@@ -1,0 +1,16 @@
+# Budget and resource utilization thresholds
+
+tokens:
+  max_session_tokens: 150000
+  warning_threshold: 100000
+
+costs:
+  max_dollars_per_run: 5.0
+  warning_dollars_per_run: 3.5
+
+commands:
+  max_command_calls: 50
+  warning_command_calls: 35
+
+time:
+  max_runtime_minutes: 15

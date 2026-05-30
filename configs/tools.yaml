@@ -1,0 +1,36 @@
+# Safe Shell execution policies for safe_bash.py
+
+allowed:
+  - git status
+  - git diff
+  - git log
+  - git branch
+  - rg
+  - grep
+  - python -m pytest
+  - pytest
+  - ruff check
+  - mypy
+  - npm test
+
+ask:
+  - git checkout
+  - git restore
+  - git clean
+  - pip install
+  - npm install
+  - pnpm install
+  - uv sync
+
+deny:
+  - rm -rf
+  - del /s
+  - format
+  - shutdown
+  - reboot
+  - sudo
+  - chmod -R 777
+  - curl | bash
+  - wget | bash
+  - git push --force
+  - git reset --hard

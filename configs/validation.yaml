@@ -1,0 +1,28 @@
+# Settings for validate_diff.py and other checkers
+
+diff:
+  max_files_modified: 10
+  warning_files_modified: 5
+  suspicious_extensions:
+    - ".pyc"
+    - ".o"
+    - ".obj"
+    - ".dll"
+    - ".exe"
+    - ".zip"
+    - ".tar.gz"
+  ignored_files:
+    - "package-lock.json"
+    - "pnpm-lock.yaml"
+    - "yarn.lock"
+
+secrets:
+  patterns:
+    - "(?i)(?:api[-_]?key|secret|password|token)\\s*[:=]\\s*[\"'][a-zA-Z0-9_\\-\\.]{12,}[\"']"
+    - "AIzaSy[A-Za-z0-9-_]{35}" # Google API Key
+    - "sk-or-v1-[A-Za-z0-9]{64}" # OpenRouter API key style
+    - "sk-[A-Za-z0-9]{48}" # Anthropic/OpenAI API key style
+
+tests:
+  required_exit_code: 0
+  allow_skipped: true

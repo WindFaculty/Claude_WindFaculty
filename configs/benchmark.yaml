@@ -1,0 +1,18 @@
+# Benchmark runner configs
+
+suites:
+  smoke:
+    timeout_seconds: 60
+    retries: 1
+  regression:
+    timeout_seconds: 300
+    retries: 2
+
+scoring:
+  accuracy_weight: 0.6
+  speed_weight: 0.2
+  token_efficiency_weight: 0.2
+
+directories:
+  suites_dir: "benchmarks/suites"
+  results_dir: "benchmarks/results"
