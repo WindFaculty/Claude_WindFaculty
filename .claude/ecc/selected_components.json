@@ -1,0 +1,19 @@
+{
+  "source": "WorldFlowAI/everything-claude-code",
+  "mode": "project-level-selected-copy",
+  "agents": "all",
+  "commands": "all",
+  "rules": "all",
+  "skills": [
+    "coding-standards",
+    "backend-patterns",
+    "tdd-workflow",
+    "security-review",
+    "eval-harness",
+    "verification-loop"
+  ],
+  "hooks": "not-enabled-yet",
+  "mcp": "not-enabled-yet",
+  "continuous_learning": "manual-only",
+  "strategic_compact": "manual-only"
+}

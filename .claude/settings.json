@@ -3,7 +3,7 @@
     "PreToolUse": [
       {
         "tools": ["Bash"],
-        "run": "python scripts/tools/safe_bash.py"
+        "run": "python scripts/integrations/ecc/ecc_hook_bridge.py --tool Bash --delegate scripts/tools/safe_bash.py"
       }
     ]
   },

@@ -107,3 +107,19 @@ You must **immediately halt execution** and notify the developer if any of the f
 4. **Scope Spreading**: The active patch touches files completely unrelated to the task description.
 5. **Untestable Changes**: The suite cannot be verified through automation, and no explanation can be provided.
 6. **No-op Diff**: You claim task success, but `git diff` outputs an empty change block, indicating no actual code changes were applied.
+
+---
+
+## 11. Selected everything-claude-code Integration
+This project integrates selected components from `everything-claude-code` (vendored under [third_party/everything-claude-code](file:///d:/antigaravity_code/Claude_WindFaculty/third_party/everything-claude-code)). 
+
+### Coding & Operational Guidelines
+1. **Planning First**: Prior to executing complex edits, prefer structure and planning using the `/plan` command or reference `.claude/commands/plan.md`.
+2. **TDD Workflow**: Adopt TDD when making changes to executable code (`/tdd` or `.claude/commands/tdd.md`).
+3. **Verification Loop**: Run complete verification before final delivery (`/verify` or `.claude/commands/verify.md`).
+4. **Security Audits**: Respect `.claude/rules/security.md` and related coding rules under `.claude/rules/`.
+5. **No Direct Overwrites**: Do not overwrite `safe_bash.py` directly; all console commands must continue to route through `safe_bash.py` protections via the integration bridge (`ecc_hook_bridge.py`).
+6. **No MCP Overuse**: Do not enable MCP servers unless explicitly requested. Keep the context usage highly optimized.
+
+For details on all integrated modules, refer to `.claude/ecc/selected_components.json`.
+

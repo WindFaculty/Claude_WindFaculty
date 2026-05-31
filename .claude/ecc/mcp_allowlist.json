@@ -1,0 +1,5 @@
+{
+  "enabled": [],
+  "available_from_vendor": "third_party/everything-claude-code/mcp-configs/mcp-servers.json",
+  "policy": "Do not enable MCP servers without explicit project need and API key review."
+}
