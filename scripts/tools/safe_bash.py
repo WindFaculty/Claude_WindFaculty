@@ -9,6 +9,8 @@ import subprocess
 import re
 import json
 import time
+import shlex
+import shutil
 
 # Hardcoded fallback lists in case configs/tools.yaml is unavailable
 DEFAULT_ALLOW = [
@@ -42,9 +44,34 @@ DEFAULT_DENY = [
     r"chmod\s+-R\s+777",
     r"curl\s+.*\s*\|\s*bash",
     r"wget\s+.*\s*\|\s*bash",
+    r"powershell\s+.*Invoke-WebRequest.*\|\s*iex",
+    r"pwsh\s+.*Invoke-WebRequest.*\|\s*iex",
     r"git\s+push\s+.*--force",
     r"git\s+reset\s+--hard"
 ]
+
+BASH_REQUIRED_BUT_NOT_FOUND = "BASH_REQUIRED_BUT_NOT_FOUND"
+
+
+def command_requires_bash(cmd_str):
+    """Return True when the command explicitly depends on bash."""
+    cmd_clean = cmd_str.strip()
+    if re.search(r"\|\s*bash(\s|$)", cmd_clean, re.IGNORECASE):
+        return True
+
+    try:
+        parts = shlex.split(cmd_clean, posix=True)
+    except ValueError:
+        return False
+
+    if not parts:
+        return False
+
+    executable = os.path.basename(parts[0]).lower()
+    if executable in {"bash", "bash.exe"}:
+        return True
+
+    return any(part.lower().endswith((".sh", ".bash")) for part in parts)
 
 def load_policies():
     """Load policies from configs/tools.yaml if exists, otherwise return defaults."""
@@ -94,6 +121,9 @@ def classify_command(cmd_str, allowed, ask, deny):
     for pattern in deny:
         if re.search(pattern, cmd_clean, re.IGNORECASE):
             return "DENY", f"Matches deny pattern: {pattern}"
+
+    if command_requires_bash(cmd_clean) and shutil.which("bash") is None:
+        return "DENY", BASH_REQUIRED_BUT_NOT_FOUND
             
     # 2. Check Allowed (exact or prefix matching)
     for pattern in allowed:

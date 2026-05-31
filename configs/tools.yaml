@@ -40,5 +40,7 @@ deny:
   - chmod -R 777
   - curl | bash
   - wget | bash
+  - powershell Invoke-WebRequest | iex
+  - pwsh Invoke-WebRequest | iex
   - git push --force
   - git reset --hard

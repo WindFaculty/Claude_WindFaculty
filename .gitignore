@@ -52,6 +52,7 @@ artifacts/*
 !artifacts/.gitkeep
 reports/*
 !reports/.gitkeep
+!reports/hook_reliability_gate_benchmark.md
 !reports/phase0_claude_environment_foundation.md
 !reports/semble_integration_20260531.md
 

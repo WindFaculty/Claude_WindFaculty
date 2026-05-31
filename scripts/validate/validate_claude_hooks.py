@@ -16,6 +16,7 @@ import json
 import os
 import platform
 import py_compile
+import re
 import shlex
 import shutil
 import stat
@@ -29,6 +30,21 @@ PYTHON_INTERPRETERS = {"python", "python3", "python.exe", "py"}
 SHELL_INTERPRETERS = {"sh", "bash", "zsh", "dash"}
 POWERSHELL_INTERPRETERS = {"powershell", "powershell.exe", "pwsh", "pwsh.exe"}
 SCRIPT_EXTENSIONS = {".py", ".sh", ".bash", ".ps1"}
+BENCHMARK_REPORT = Path("reports") / "hook_reliability_gate_benchmark.md"
+REPORT_REQUIRED_SECTIONS = {
+    "branch",
+    "head",
+    "files changed",
+    "tests run",
+    "verdict",
+    "known limitations",
+}
+OVERCLAIM_PHRASES = {
+    "fully completed",
+    "all verified",
+    "production ready",
+    "all tests pass",
+}
 
 
 def _repo_root():
@@ -47,6 +63,21 @@ def _looks_like_local_script(token):
     path = Path(token)
     return path.suffix.lower() in SCRIPT_EXTENSIONS and (
         "/" in token or "\\" in token or not path.is_absolute()
+    )
+
+
+def _command_requires_bash(command):
+    if re.search(r"\|\s*bash(\s|$)", command, re.IGNORECASE):
+        return True
+    try:
+        parts = shlex.split(command, posix=True)
+    except ValueError:
+        return False
+    if not parts:
+        return False
+    executable = Path(parts[0]).name.lower()
+    return executable in {"bash", "bash.exe"} or any(
+        part.lower().endswith((".sh", ".bash")) for part in parts
     )
 
 
@@ -200,7 +231,7 @@ def _check_python_syntax(script_path):
 def _check_shell_syntax(script_path):
     bash = shutil.which("bash")
     if not bash:
-        return None, "bash_not_available"
+        return False, "BASH_REQUIRED_BUT_NOT_FOUND"
 
     result = subprocess.run(
         [bash, "-n", str(script_path)],
@@ -225,8 +256,6 @@ def _check_script_syntax(script_path):
 
     if suffix in {".sh", ".bash"}:
         ok, detail = _check_shell_syntax(script_path)
-        if ok is None:
-            return {"status": "skipped", "check": "shell_parse", "detail": detail}
         return {
             "status": "passed" if ok else "failed",
             "check": "shell_parse",
@@ -323,6 +352,15 @@ def _validate_command(command, repo_root):
             "issues": ["MALFORMED_COMMAND"],
         }
 
+    if _command_requires_bash(command) and shutil.which("bash") is None:
+        return {
+            "command": command,
+            "status": "failed",
+            "reason": "BASH_REQUIRED_BUT_NOT_FOUND",
+            "argv": parts,
+            "issues": ["BASH_REQUIRED_BUT_NOT_FOUND"],
+        }
+
     script_token = _script_token_from_parts(parts)
     if script_token is None:
         return {
@@ -385,6 +423,73 @@ def _validate_command(command, repo_root):
     return result
 
 
+def _git(args, repo_root):
+    result = subprocess.run(
+        ["git", *args],
+        cwd=str(repo_root),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    return result.returncode, result.stdout.strip(), result.stderr.strip()
+
+
+def _git_value(args, repo_root):
+    code, stdout, _stderr = _git(args, repo_root)
+    return stdout if code == 0 else None
+
+
+def _validate_benchmark_report(repo_root):
+    report = {
+        "path": _as_posix(BENCHMARK_REPORT),
+        "status": "failed",
+        "issues": [],
+    }
+    report_path = repo_root / BENCHMARK_REPORT
+
+    if not report_path.exists():
+        report["issues"].append("BENCHMARK_REPORT_MISSING")
+        return report
+
+    code, _stdout, _stderr = _git(["check-ignore", "-q", _as_posix(BENCHMARK_REPORT)], repo_root)
+    if code == 0:
+        report["issues"].append("BENCHMARK_REPORT_GIT_IGNORED")
+
+    text = report_path.read_text(encoding="utf-8")
+    lower_text = text.lower()
+    for section in REPORT_REQUIRED_SECTIONS:
+        if section not in lower_text:
+            report["issues"].append(f"BENCHMARK_REPORT_MISSING_{section.upper().replace(' ', '_')}")
+
+    if any(phrase in lower_text for phrase in OVERCLAIM_PHRASES):
+        has_non_pass = any(token in lower_text for token in {"skipped", "not_run", "blocked_by_env", "fail"})
+        if has_non_pass:
+            report["issues"].append("BENCHMARK_REPORT_OVERCLAIM")
+
+    head = _git_value(["rev-parse", "HEAD"], repo_root)
+    subject = _git_value(["log", "-1", "--pretty=%s"], repo_root)
+    base = _git_value(["rev-parse", "--verify", "main"], repo_root)
+    changed_files = []
+    if base:
+        changed = _git_value(["diff", "--name-only", "main...HEAD"], repo_root)
+        changed_files = [line for line in (changed or "").splitlines() if line.strip()]
+
+    if head and f"HEAD: {head}" not in text:
+        report["issues"].append("BENCHMARK_REPORT_HEAD_MISMATCH")
+    if subject and f"Commit subject: {subject}" not in text:
+        report["issues"].append("BENCHMARK_REPORT_COMMIT_SUBJECT_MISMATCH")
+
+    if base:
+        missing_files = [path for path in changed_files if path not in text]
+        if missing_files:
+            report["issues"].append("BENCHMARK_REPORT_CHANGED_FILES_MISMATCH")
+    elif "base unknown" not in lower_text:
+        report["issues"].append("BENCHMARK_REPORT_BASE_UNKNOWN_NOT_DECLARED")
+
+    report["status"] = "passed" if not report["issues"] else "failed"
+    return report
+
+
 def validate_claude_hooks(
     config_path=DEFAULT_CONFIG,
     repo_root=None,
@@ -408,6 +513,7 @@ def validate_claude_hooks(
         "issues": [],
         "audit": None,
         "dependencies": None,
+        "benchmark_report": None,
     }
 
     if not config_path.exists():
@@ -447,6 +553,14 @@ def validate_claude_hooks(
 
     if enable_dependency_analysis:
         report["dependencies"] = _collect_hook_dependencies(report)
+
+    if (repo_root / ".git").exists():
+        benchmark_report = _validate_benchmark_report(repo_root)
+        report["benchmark_report"] = benchmark_report
+        report["issues"].extend(benchmark_report["issues"])
+        if benchmark_report["issues"]:
+            report["summary"]["failed"] += 1
+            report["summary"]["total"] += 1
 
     if report["summary"]["failed"] == 0 and report["summary"]["warned"] == 0:
         report["passed"] = True
