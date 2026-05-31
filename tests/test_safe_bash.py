@@ -1,6 +1,5 @@
 import sys
 import os
-import pytest
 
 # Ensure script directory is on path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -14,6 +13,7 @@ def test_safe_bash_allow_deny():
     assert classify_command("git status", allowed, ask, deny)[0] == "ALLOW"
     assert classify_command("git diff", allowed, ask, deny)[0] == "ALLOW"
     assert classify_command("pytest", allowed, ask, deny)[0] == "ALLOW"
+    assert classify_command("python scripts/validate_claude_hooks.py", allowed, ask, deny)[0] == "ALLOW"
     
     # 2. Verify deny commands
     assert classify_command("rm -rf .", allowed, ask, deny)[0] == "DENY"

@@ -6,6 +6,7 @@ allowed:
   - python scripts/bootstrap/verify_environment.py
   - python scripts/validate/validate_diff.py
   - python scripts/validate/validate_secrets.py
+  - python scripts/validate_claude_hooks.py
   - python scripts/tools/safe_test.py
   - python -m pytest
   - python -m py_compile
