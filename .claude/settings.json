@@ -2,8 +2,13 @@
   "hooks": {
     "PreToolUse": [
       {
-        "tools": ["Bash"],
-        "run": "python scripts/tools/safe_bash.py"
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/tools/safe_bash.py"
+          }
+        ]
       }
     ]
   },
