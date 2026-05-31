@@ -1,10 +1,11 @@
 {
   "hooks": {
-    "preToolUse:bash": "python scripts/tools/safe_bash.py",
-    "postToolUse:bash": "",
-    "preToolUse:edit": "",
-    "preToolUse:write": "",
-    "stop": ""
+    "PreToolUse": [
+      {
+        "tools": ["Bash"],
+        "run": "python scripts/tools/safe_bash.py"
+      }
+    ]
   },
   "settings": {
     "safetyClassifierEnabled": true,
